@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Study Assistant - Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1><i class="fas fa-graduation-cap"></i> AI Study Assistant</h1>
+                    <p>Personalized learning powered by AI</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span class="welcome-text">Welcome, <span id="welcomeUsername">Loading...</span>!</span>
+                        <div class="user-menu">
+                            <button id="userMenuButton" class="user-menu-button">
+                                <i class="fas fa-user-circle"></i>
+                                <span id="headerUsername">Loading...</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div id="userDropdown" class="user-dropdown">
+                                <a href="/profile" class="dropdown-item">
+                                    <i class="fas fa-user"></i> Profile
+                                </a>
+                                <a href="/goals" class="dropdown-item">
+                                    <i class="fas fa-target"></i> My Goals
+                                </a>
+                                <a href="/progress" class="dropdown-item">
+                                    <i class="fas fa-chart-line"></i> Progress
+                                </a>
+                                <a href="/settings" class="dropdown-item">
+                                    <i class="fas fa-cog"></i> Settings
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="#" id="logoutButton" class="dropdown-item">
+                                    <i class="fas fa-sign-out-alt"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="chat-info">
+                        <h3><i class="fas fa-comments"></i> Study Chat</h3>
+                        <p class="user-level" id="userLevelInfo">Loading user information...</p>
+                    </div>
+                    <div class="chat-actions">
+                        <button id="clearButton" class="action-button">
+                            <i class="fas fa-trash"></i> Clear Chat
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message system-message">
+                        <div class="message-content">
+                            <i class="fas fa-info-circle"></i>
+                            {% if user %}
+                            Welcome back, {{ user.username }}! I'm your personalized AI study assistant. 
+                            I know you're interested in {{ ', '.join(user.topics_of_interest[:3]) }}{% if user.topics_of_interest|length > 3 %} and more{% endif %}.
+                            How can I help you with your studies today?
+                            {% else %}
+                            Welcome! I'm your AI study assistant powered by ChatGPT and enhanced with RAG (Retrieval-Augmented Generation). 
+                            I can help you with questions and provide context-aware responses using the knowledge base.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-container">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="messageInput" 
+                            placeholder="Ask me anything about your studies..."
+                            rows="1"
+                            maxlength="1000"
+                        ></textarea>
+                        <button id="sendButton" class="send-button">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="quick-action" data-question="Help me understand a difficult concept">
+                            <i class="fas fa-lightbulb"></i> Explain Concept
+                        </button>
+                        <button class="quick-action" data-question="Give me a study plan for today">
+                            <i class="fas fa-calendar"></i> Study Plan
+                        </button>
+                        <button class="quick-action" data-question="Quiz me on what I've learned">
+                            <i class="fas fa-question-circle"></i> Quiz Me
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                {% if user %}
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-user"></i> My Profile</h3>
+                    <div class="profile-info">
+                        <div class="profile-item">
+                            <span class="profile-label">Study Level:</span>
+                            <span class="profile-value">{{ user.study_level.title() }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="profile-label">Current Stage:</span>
+                            <span class="profile-value">{{ user.current_stage.replace('_', ' ').title() }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="profile-label">Learning Style:</span>
+                            <span class="profile-value">{{ user.preferred_learning_style.title() if user.preferred_learning_style else 'Not specified' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-book"></i> My Interests</h3>
+                    <div class="interests-list">
+                        {% for topic in user.topics_of_interest %}
+                        <span class="interest-tag">{{ topic.title() }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-target"></i> Current Goals</h3>
+                    <div class="goals-list">
+                        {% for goal in user.current_goals[:3] %}
+                        <div class="goal-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>{{ goal }}</span>
+                        </div>
+                        {% endfor %}
+                        {% if user.current_goals|length > 3 %}
+                        <div class="goal-item">
+                            <i class="fas fa-ellipsis-h"></i>
+                            <span>And {{ user.current_goals|length - 3 }} more...</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Learning History Section -->
+                <div class="sidebar-section" id="learningHistorySection">
+                    <h3><i class="fas fa-history"></i> Learning History</h3>
+                    <div class="learning-history-list" id="learningHistoryList">
+                        <p class="no-history">Start chatting to build your learning history!</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Clean white space for future use -->
+                
+            </div>
+        </main>
+    </div>
+
+
+
+    <script>
+        // Pass user data to JavaScript
+        window.userData = {
+            id: '{{ user.id if user else "" }}',
+            username: '{{ user.username if user else "" }}',
+            studyLevel: '{{ user.study_level if user else "" }}',
+            topicsOfInterest: {{ user.topics_of_interest|tojson if user else '[]' }},
+            currentGoals: {{ user.current_goals|tojson if user else '[]' }}
+        };
+    </script>
+    <script src="{{ url_for('static', path='/js/chat.js') }}"></script>
+</body>
+</html> 
